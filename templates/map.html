@@ -25,6 +25,7 @@
             visibility: hidden;
             "  id="loading-overlay">
         <img src="static\gifs\loading.gif" alt="loading" width="300">
+        <br>
         <p style="background-color: aliceblue;" id="loadingText">not loading</p>
     </div>
     <details  style="position: absolute; z-index: 99999; width: 30%; background-color: rgb(255, 255, 224); right: 5%; top: 5%; border-color: rgb(109, 109, 109);">
@@ -97,12 +98,29 @@
 
             <br>
             <p>Customer Segments:</p>
-            <input type="checkbox" name="customerSegment" value="crisisgoClient" {% if 'crisisgoClient' in customerSegment %}checked{% endif %}>Crisisgo Clients<br>
-            <input type="checkbox" name="customerSegment" value="potentialCrisisgoClient" {% if 'potentialCrisisgoClient' in customerSegment %}checked{% endif %}>Potential Crisisgo Clients<br>
-            <input type="checkbox" name="customerSegment" value="E911Client" {% if 'E911Client' in customerSegment %}checked{% endif %}>E911 Clients<br>
-            <input type="checkbox" name="customerSegment" value="psapClient" {% if 'psapClient' in customerSegment %}checked{% endif %}>PSAP Clients<br>
-            <input type="checkbox" name="customerSegment" value="potentialPsapClient" {% if 'potentialPsapClient' in customerSegment %}checked{% endif %}>Potential PSAP Clients<br>
-            <input type="checkbox" name="customerSegment" value="noneClient" {% if 'noneClient' in customerSegment %}checked{% endif %}>None-Clients<br>
+            <input type="checkbox" name="customerSegment" value="crisisgoClient" {% if 'crisisgoClient' in customerSegment %}checked{% endif %}>Crisisgo Clients
+            <img src="/static/icons/district_crisisgo.png" style="width: 15px; height: 15px;" alt="district crisisgo">
+            <img src="/static/icons/private_crisisgo.png" style="width: 15px; height: 15px;" alt="private crisisgo">
+            <br>
+            <input type="checkbox" name="customerSegment" value="potentialCrisisgoClient" {% if 'potentialCrisisgoClient' in customerSegment %}checked{% endif %}>Potential Crisisgo Clients
+            <img src="/static/icons/district_potential.png" style="width: 15px; height: 15px;" alt="district potential crisisgo">
+            <img src="/static/icons/private_potential.png" style="width: 15px; height: 15px;" alt="private potential crisisgo">
+            <br>
+            <input type="checkbox" name="customerSegment" value="E911Client" {% if 'E911Client' in customerSegment %}checked{% endif %}>E911 Clients
+            <img src="/static/icons/district_e911.png" style="width: 15px; height: 15px;" alt="district e911">
+            <img src="/static/icons/private_e911.png" style="width: 15px; height: 15px;" alt="private e911">
+            <br>
+            <input type="checkbox" name="customerSegment" value="psapClient" {% if 'psapClient' in customerSegment %}checked{% endif %}>PSAP Clients
+            <img src="/static/icons/police_client.png" style="width: 15px; height: 15px;" alt="psap client">
+            <br>
+            <input type="checkbox" name="customerSegment" value="potentialPsapClient" {% if 'potentialPsapClient' in customerSegment %}checked{% endif %}>Potential PSAP Clients
+            <img src="/static/icons/police_potential.png" style="width: 15px; height: 15px;" alt="psap potential client">
+            <br>
+            <input type="checkbox" name="customerSegment" value="noneClient" {% if 'noneClient' in customerSegment %}checked{% endif %}>None-Clients
+            <img src="/static/icons/private_none.png" style="width: 15px; height: 15px;" alt="none client">
+            <img src="/static/icons/district_none.png" style="width: 15px; height: 15px;" alt="none client">
+            <img src="/static/icons/police_none.png" style="width: 15px; height: 15px;" alt="none client">
+            <br>
 
 
             <br>

@@ -18,20 +18,26 @@ def allowed_file(filename):
 
 print("程序开始")
 # 创建数据库连接
-try:
-    db = mysql.connector.connect(
-        host="db-icg.dev.lianyoushixun.com",  # MySQL服务器地址
-        user="customer_location",  # 用户名
-        password="abPACbBT_vDjrWcFZW2!VoBUjyAaU7d8",  # 密码
-        database="customer_location"  # 数据库名称
-    )
-    print("数据库登陆成功")  # 若此处仍崩溃，问题在连接本身
-    # 创建游标对象，用于执行SQL查询
-    cursor = db.cursor()
-except Exception as e:
-    print(f"连接失败: {e}")
+def connect(retry_num): #retry_num:记录重试次数，连接失败后会重试连接，默认最多五次
+    if(retry_num<=0):
+        return -1
+    try:
+        global db,cursor
+        db = mysql.connector.connect(
+            host="db-icg.dev.lianyoushixun.com",  # MySQL服务器地址
+            user="customer_location",  # 用户名
+            password="abPACbBT_vDjrWcFZW2!VoBUjyAaU7d8",  # 密码
+            database="customer_location"  # 数据库名称
+        )
+        print("数据库登陆成功")  # 若此处仍崩溃，问题在连接本身
+        # 创建游标对象，用于执行SQL查询
+        cursor = db.cursor()
+        return
+    except Exception as e:
+        print(f"连接失败: {e}")
+        connect(retry_num-1)
 
-
+connect(5)
 def element_in_column(data, i, target):#验证某元素是否在某多维列表第二下标为i的位置
     return any(len(row) > i and row[i] == target for row in data)
 
@@ -74,7 +80,7 @@ def customerSegment_check(customerSegment,id,idSub): #idSub为id类型对应下�
             (not customerSegment_check(["potentialCrisisgoClient"],id,idSub)) and\
             (not customerSegment_check(["psapClient"],id,idSub)) and\
             (not customerSegment_check(["potentialPsapClient"],id,idSub)):
-                flag.append(customerSegment_i)
+                flag.append('noneClient')
                 #noneClient: 都不在
     return flag
 
@@ -86,6 +92,7 @@ app = Flask(__name__)
 @app.route('/update_data',methods=['POST'])
 def update_data():
     print("进入文件处理")
+    db.ping(reconnect=True,attempts=5)
     upList=None  #待上传数据
     upType=None  #待上传类型
     # 检查请求中是否包含文件
@@ -165,6 +172,7 @@ def home():
 @app.route('/map')
 def map():
     print("进入map页面")
+    db.ping(reconnect=True,attempts=5)
     refreshClient()#更新数据库
     state=request.args.get('state')
     siteType=request.args.getlist('siteType')
@@ -223,8 +231,7 @@ def map():
 
 
 
-    print("进入处理private")###
-    #选择Private Schools
+    #定义“图标”字典
     icon_private={
         "noneClient":folium.CustomIcon(
             icon_image="static/icons/private_none.png",
@@ -243,6 +250,70 @@ def map():
         ),
         "potentialCrisisgoClient":folium.CustomIcon(
             icon_image="static/icons/private_potential.png",
+            icon_size=(50,50),
+            icon_anchor=(25,50)
+        ),
+    }
+
+    icon_public={
+        "noneClient":folium.CustomIcon(
+            icon_image="static/icons/public_none.png",
+            icon_size=(50,50),
+            icon_anchor=(25,50)
+        ),
+        "crisisgoClient":folium.CustomIcon(
+            icon_image="static/icons/public_crisisgo.png",
+            icon_size=(50,50),
+            icon_anchor=(25,50)
+        ),
+        "E911Client":folium.CustomIcon(
+            icon_image="static/icons/public_e911.png",
+            icon_size=(50,50),
+            icon_anchor=(25,50)
+        ),
+        "potentialCrisisgoClient":folium.CustomIcon(
+            icon_image="static/icons/public_potential.png",
+            icon_size=(50,50),
+            icon_anchor=(25,50)
+        ),
+    }
+
+    icon_district={
+        "noneClient":folium.CustomIcon(
+            icon_image="static/icons/district_none.png",
+            icon_size=(50,50),
+            icon_anchor=(25,50)
+        ),
+        "crisisgoClient":folium.CustomIcon(
+            icon_image="static/icons/district_crisisgo.png",
+            icon_size=(50,50),
+            icon_anchor=(25,50)
+        ),
+        "E911Client":folium.CustomIcon(
+            icon_image="static/icons/district_e911.png",
+            icon_size=(50,50),
+            icon_anchor=(25,50)
+        ),
+        "potentialCrisisgoClient":folium.CustomIcon(
+            icon_image="static/icons/district_potential.png",
+            icon_size=(50,50),
+            icon_anchor=(25,50)
+        ),
+    }
+
+    icon_psap={
+        "psapClient":folium.CustomIcon(
+            icon_image="static/icons/police_client.png",
+            icon_size=(50,50),
+            icon_anchor=(25,50)
+        ),
+        "noneClient":folium.CustomIcon(
+            icon_image="static/icons/police_none.png",
+            icon_size=(50,50),
+            icon_anchor=(25,50)
+        ),
+        "potentialPsapClient":folium.CustomIcon(
+            icon_image="static/icons/police_potential.png",
             icon_size=(50,50),
             icon_anchor=(25,50)
         ),
@@ -274,30 +345,28 @@ def map():
 
     print("进入处理public")###
     #选择Public Schools
-    icon_public=folium.CustomIcon(
-        icon_image="static/icons/public_e911.png",
-        icon_size=(50,50),
-        icon_anchor=(25,50)
-    )
     if("public" in siteType):
         if(states!=[]):
             #选择州
             cursor.execute(f"SELECT * FROM public_schools WHERE state IN ({placeholders})",states)
         temp_list=cursor.fetchall()#temp_list存储选择的所有学校数据
         for i in temp_list:
-            if customerSegment_check(customerSegment=customerSegment,id=i[1],idSub=1):#如果符合客户类型条件
+            segmentType=customerSegment_check(customerSegment=customerSegment,id=i[1],idSub=1)#如果符合客户类型条件
+                #print("符合条件，添加点中")###
+            if(not segmentType==[]):#如果符合客户类型条件
                 print("符合条件，添加点中")###
                 points.append([float(i[13]),float(i[14])])
-                folium.Marker([i[13], i[14]], popup=i[3],icon=icon_public).add_to(marker_cluster)#添加标点
+                if("E911Client" in segmentType):
+                    folium.Marker([i[13], i[14]], popup=i[3],icon=icon_public["E911Client"]).add_to(marker_cluster)#添加标点
+                else:
+                    try:
+                        folium.Marker([i[13], i[14]], popup=i[3],icon=icon_public[segmentType[0]]).add_to(marker_cluster)#添加标点
+                    except:
+                        print("error")
             
 
     #选择PSAP
     print("进入处理psap")###
-    icon_psap=folium.CustomIcon(
-        icon_image="static/icons/police_none.png",
-        icon_size=(50,50),
-        icon_anchor=(25,50)
-    )
     if("psap" in siteType):
         if(states!=[]):
             #选择州
@@ -308,29 +377,36 @@ def map():
             if(i[8]==i[7]==0):
                 print(i[2]+" is in unknown position")
                 continue
-            if customerSegment_check(customerSegment=customerSegment,id=i[1],idSub=2):#如果符合客户类型条件
+            segmentType=customerSegment_check(customerSegment=customerSegment,id=i[1],idSub=2)#如果符合客户类型条件
+                #print("符合条件，添加点中")###
+            if not segmentType==[]:#如果符合客户类型条件
                 print("符合条件，添加点中")###
                 points.append([float(i[8]),float(i[7])])
-                folium.Marker([i[8], i[7]], popup=i[2],icon=icon_psap).add_to(marker_cluster)#添加标点
+                try:
+                    folium.Marker([i[8], i[7]], popup=i[2],icon=icon_psap[segmentType[0]]).add_to(marker_cluster)#添加标点
+                except:
+                    print("error")
 
     #选择school_district
     print("进入处理school_district")###
-    icon_district=folium.CustomIcon(
-        icon_image="static/icons/district_none.png",
-        icon_size=(50,50),
-        icon_anchor=(25,50)
-    )
     if("district" in siteType):
         if(states!=[]):
             #选择州
             cursor.execute(f"SELECT * FROM school_districts WHERE state IN ({placeholders})",states)
         temp_list=cursor.fetchall()#temp_list存储选择的所有学校数据
         for i in temp_list:
-
-            if customerSegment_check(customerSegment=customerSegment,id=i[3],idSub=3):#如果符合客户类型条件
+            segmentType=customerSegment_check(customerSegment=customerSegment,id=i[3],idSub=3)#如果符合客户类型条件
+                #print("符合条件，添加点中")###
+            if not segmentType==[]:#如果符合客户类型条件
                 print("符合条件，添加点中")###
                 points.append([float(i[1]),float(i[0])])
-                folium.Marker([i[1], i[0]], popup=i[4],icon=icon_district).add_to(marker_cluster)#添加标点
+                if("E911Client" in segmentType):
+                    folium.Marker([i[1], i[0]], popup=i[4],icon=icon_district["E911Client"]).add_to(marker_cluster)#添加标点
+                else:
+                    try:
+                        folium.Marker([i[1], i[0]], popup=i[4],icon=icon_district[segmentType[0]]).add_to(marker_cluster)#添加标点
+                    except:
+                        print("error")
 
 
 
