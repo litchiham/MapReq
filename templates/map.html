@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Show sites in a map</title> 
+    <style>
+        .filters{
+            background-color: rgb(154, 205, 50);
+            border-color: rgb(102, 136, 34);
+            border-width: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div style="position: fixed; /* Use fixed to stay on top even when scrolling */
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(255, 255, 255, 0.8); 
+            z-index: 1000000; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+            "  id="loading-overlay">
+        <img src="static\gifs\loading.gif" alt="loading" width="300">
+        <p style="background-color: aliceblue;" id="loadingText">not loading</p>
+    </div>
+    <details  style="position: absolute; z-index: 99999; width: 30%; background-color: rgb(255, 255, 224); right: 5%; top: 5%; border-color: rgb(109, 109, 109);">
+        <summary class="filters">[Hide/Show] Filters</summary>
+        <form action="/map" method="GET">
+            <label for="state">State/Region:</label>
+            <select id="state" name="state" style="width: 200px;">
+                <option value="Any">Any</option>
+                <option value="AL">AL</option>
+                <option value="AK">AK</option>
+                <option value="AZ">AZ</option>
+                <option value="AR">AR</option>
+                <option value="CA">CA</option>
+                <option value="CO">CO</option>
+                <option value="CT">CT</option>
+                <option value="DE">DE</option>
+                <option value="FL">FL</option>
+                <option value="GA">GA</option>
+                <option value="HI">HI</option>
+                <option value="ID">ID</option>
+                <option value="IL">IL</option>
+                <option value="IN">IN</option>
+                <option value="IA">IA</option>
+                <option value="KS">KS</option>
+                <option value="KY">KY</option>
+                <option value="LA">LA</option>
+                <option value="ME">ME</option>
+                <option value="MD">MD</option>
+                <option value="MA">MA</option>
+                <option value="MI">MI</option>
+                <option value="MN">MN</option>
+                <option value="MS">MS</option>
+                <option value="MO">MO</option>
+                <option value="MT">MT</option>
+                <option value="NE">NE</option>
+                <option value="NV">NV</option>
+                <option value="NH">NH</option>
+                <option value="NJ">NJ</option>
+                <option value="NM">NM</option>
+                <option value="NY">NY</option>
+                <option value="NC">NC</option>
+                <option value="ND">ND</option>
+                <option value="OH">OH</option>
+                <option value="OK">OK</option>
+                <option value="OR">OR</option>
+                <option value="PA">PA</option>
+                <option value="RI">RI</option>
+                <option value="SC">SC</option>
+                <option value="SD">SD</option>
+                <option value="TN">TN</option>
+                <option value="TX">TX</option>
+                <option value="UT">UT</option>
+                <option value="VT">VT</option>
+                <option value="VA">VA</option>
+                <option value="WA">WA</option>
+                <option value="WV">WV</option>
+                <option value="WI">WI</option>
+                <option value="WY">WY</option>
+                <option value="Northeast">Northeast Region</option>
+                <option value="Midwest">Midwest Region</option>
+                <option value="South">South Region</option>
+                <option value="West">West Region</option>
+            </select>
+            <br>
+            <p>Site Type:</p>
+            <input type="checkbox" name="siteType" value="private" {% if 'private' in siteType %}checked{% endif %}>Private Schools<br>
+            <input type="checkbox" name="siteType" value="public" {% if 'public' in siteType %}checked{% endif %}>Public Schools<br>
+            <input type="checkbox" name="siteType" value="psap" {% if 'psap' in siteType %}checked{% endif %}>PSAP<br>
+            <input type="checkbox" name="siteType" value="district" {% if 'district' in siteType %}checked{% endif %}>School Districts<br>
+
+            <br>
+            <p>Customer Segments:</p>
+            <input type="checkbox" name="customerSegment" value="crisisgoClient" {% if 'crisisgoClient' in customerSegment %}checked{% endif %}>Crisisgo Clients<br>
+            <input type="checkbox" name="customerSegment" value="potentialCrisisgoClient" {% if 'potentialCrisisgoClient' in customerSegment %}checked{% endif %}>Potential Crisisgo Clients<br>
+            <input type="checkbox" name="customerSegment" value="E911Client" {% if 'E911Client' in customerSegment %}checked{% endif %}>E911 Clients<br>
+            <input type="checkbox" name="customerSegment" value="psapClient" {% if 'psapClient' in customerSegment %}checked{% endif %}>PSAP Clients<br>
+            <input type="checkbox" name="customerSegment" value="potentialPsapClient" {% if 'potentialPsapClient' in customerSegment %}checked{% endif %}>Potential PSAP Clients<br>
+            <input type="checkbox" name="customerSegment" value="noneClient" {% if 'noneClient' in customerSegment %}checked{% endif %}>None-Clients<br>
+
+
+            <br>
+            <button type="submit" onclick="loading()">Confirm</button>
+            <script>
+                function loading(){
+                    document.getElementById("loadingText").innerText = "The map is being generated. It could take a minute if the data is too much. Please do not refresh!";
+                    document.getElementById("loading-overlay").style.visibility="visible";
+                }
+            </script>
+        </form>
+    </details>
+
+    <details  style="position: absolute; z-index: 99999; width: 30%; background-color: rgb(255, 255, 224); left: 5%; top: 5%; border-color: rgb(109, 109, 109);">
+        <summary class="filters">[Hide/Show] Update List</summary>
+        <form action="/update_data" method="POST" enctype="multipart/form-data">
+            <label for="file">Select file:</label>
+            <input type="file" name="file" id="file" accept=".csv,.txt" single>
+            <br>
+            <label>which one do you want to update:</label>
+                <br>
+                <input type="radio" id="crisisgoClientUp" name="upType" value="crisisgoClient" checked>
+                <label for="crisisgoClientUp">Crisisgo Clients</label>
+                <br>
+                <input type="radio" id="potentialCrisisgoClientUp" name="upType" value="potentialCrisisgoClient">
+                <label for="potentialCrisisgoClientUp">Potential Crisisgo Clients</label>
+                <br>
+                <input type="radio" id="E911ClientUp" name="upType" value="E911Client">
+                <label for="E911ClientUp">E911 Clients</label>
+                <br>
+                <input type="radio" id="psapClientUp" name="upType" value="psapClient">
+                <label for="psapClientUp">Psap Clients</label>
+                <br>
+                <input type="radio" id="potentialPsapClientUp" name="upType" value="potentialPsapClient">
+                <label for="potentialPsapClientUp">Potential Psap Clients</label>
+                <br>
+                <br>
+            <button type="submit">Confirm</button>
+            <p>formula:
+                <br>[ncessch][ppin_uuid][psap_uuid][leaid][name]</p>
+            <p style="color: red;">Do not use excel to edit csv directly!</p>
+        </form>
+    </details>
+    <script>
+        document.getElementById("state").value ="{{state}}";
+        </script>
+    {{html_map|safe}}
+    
+</body>
+</html>
